@@ -40,7 +40,7 @@ class UserHateoasTest {
 
 
     @Test
-    void getUserByIdHateoasTest() throws Exception {
+    void getUserByIdHateoas() throws Exception {
         UserResponse response = new UserResponse(
                 1L, "name", "name@mail.ru", 123, new Date(), new Date()
         );
@@ -60,7 +60,7 @@ class UserHateoasTest {
     }
 
     @Test
-    void getAllUsers_hateoasCollection() throws Exception {
+    void getAllUsersHateoas() throws Exception {
         UserResponse response1 = new UserResponse(
                 1L, "name", "name@mail.ru", 123, new Date(), new Date()
         );
@@ -88,7 +88,7 @@ class UserHateoasTest {
     }
 
     @Test
-    void createUser_hateoasAndLocation() throws Exception {
+    void createUserHateoas() throws Exception {
         CreateUserRequest request = new CreateUserRequest("name", "name@mail.ru", 123);
 
         UserResponse response = new UserResponse(
@@ -110,7 +110,7 @@ class UserHateoasTest {
     }
 
     @Test
-    void updateUser_hateoas() throws Exception {
+    void updateUserHateoas() throws Exception {
         var request = new UpdateUserRequest("updated", "name@mail.ru", 12);
         var response = new UserResponse(12L, "updated", "name@mail.ru", 12, new Date(), new Date());
 
