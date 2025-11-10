@@ -9,25 +9,27 @@ import org.example.exception.types.NotFoundException;
 import org.example.mapper.UserMapper;
 import org.example.repository.UserRepository;
 import org.example.service.UserService;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.*;
+import java.util.Date;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
-
-import static org.assertj.core.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
+
     @Mock
     UserRepository userRepository;
+
     @Mock
     UserMapper mapper;
+
     @InjectMocks
     UserService service;
 
@@ -50,26 +52,22 @@ class UserServiceTest {
 
     @Test
     void createUser() {
-        User user = new User();
-        user.setName("name");
-        user.setAge(1);
-        user.setEmail("name@mail.ru");
-        user.setId(1L);
         Date date = new Date();
-        user.setCreatedAt(date);
-        user.setUpdatedAt(date);
+        User user = new User(1L, "name", "name@mail.ru", 123, date, date);
 
         CreateUserRequest createUserRequest = new CreateUserRequest("name", "naME@mail.ru", 1);
-        UserResponse userResponse = new UserResponse(1L, "name", "name@mail.ru", 1, date, date);
+        UserResponse expectedResponse = new UserResponse(1L, "name", "name@mail.ru", 1, date, date);
 
         when(userRepository.existsUserByEmail("name@mail.ru")).thenReturn(false);
         when(mapper.fromCreate(createUserRequest)).thenReturn(user);
-        when(mapper.toResponse(user)).thenReturn(userResponse);
+        when(mapper.toResponse(user)).thenReturn(expectedResponse);
         when(userRepository.save(user)).thenReturn(user);
 
+        UserResponse actualResponse = service.createUser(createUserRequest);
 
-        assertThat(service.createUser(createUserRequest)).isNotNull();
-        assertThat(service.createUser(createUserRequest)).isEqualTo(userResponse);
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+        verify(userRepository).existsUserByEmail("name@mail.ru");
+        verify(userRepository).save(user);
     }
 
     @Test
@@ -86,8 +84,7 @@ class UserServiceTest {
 
     @Test
     void readNotExistingUser() {
-        when(userRepository.findById(1L)).thenThrow(new NotFoundException("User not found"));
-
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
         assertThrows(NotFoundException.class, () -> service.readUser(1L));
     }
 
@@ -96,15 +93,56 @@ class UserServiceTest {
         Date date = new Date();
         User user = new User(1L, "name", "name@mail.ru", 123, date, date);
         UpdateUserRequest updateUserRequest = new UpdateUserRequest(null, "newName@mail.ru", 123);
-        UserResponse userResponse = new UserResponse(1L, "name", "newname@mail.ru", 1, date, date);
+        UserResponse expectedResponse = new UserResponse(1L, "name", "newname@mail.ru", 1, date, date);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.existsUserByEmail("newname@mail.ru")).thenReturn(false);
+        when(mapper.toResponse(user)).thenReturn(expectedResponse);
 
-        when(mapper.toResponse(user)).thenReturn(userResponse);
+        UserResponse actualResponse = service.updateUser(1L, updateUserRequest);
 
-        assertThat(service.updateUser(1L, updateUserRequest)).isNotNull();
-        assertThat(service.updateUser(1L, updateUserRequest)).isEqualTo(userResponse);
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+        verify(userRepository).findById(1L);
+        verify(userRepository).existsUserByEmail("newname@mail.ru");
+        verify(mapper).toResponse(user);
+    }
+
+    @Test
+    void updateUserAllNull() {
+        Date date = new Date();
+        User user = new User(1L, "name", "name@mail.ru", 123, date, date);
+        UpdateUserRequest updateUserRequest = new UpdateUserRequest(null, null, null);
+        UserResponse expectedResponse = new UserResponse(1L, "name", "name@mail.ru", 123, date, date);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(mapper.toResponse(user)).thenReturn(expectedResponse);
+
+        UserResponse actualResponse = service.updateUser(1L, updateUserRequest);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+        verify(userRepository).findById(1L);
+        verify(userRepository, never()).existsUserByEmail(anyString());
+        verify(mapper).applyUpdate(updateUserRequest, user);
+        verify(mapper).toResponse(user);
+    }
+
+    @Test
+    void updateUserBlankEmail() {
+        Date date = new Date();
+        User user = new User(1L, "name", "name@mail.ru", 123, date, date);
+        UpdateUserRequest updateUserRequest = new UpdateUserRequest("newName", "", 12);
+        UserResponse expectedResponse = new UserResponse(1L, "newName", "name@mail.ru", 12, date, date);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(mapper.toResponse(user)).thenReturn(expectedResponse);
+
+        UserResponse actualResponse = service.updateUser(1L, updateUserRequest);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+        verify(userRepository).findById(1L);
+        verify(userRepository, never()).existsUserByEmail(anyString());
+        verify(mapper).applyUpdate(updateUserRequest, user);
+        verify(mapper).toResponse(user);
     }
 
     @Test
@@ -122,8 +160,18 @@ class UserServiceTest {
     }
 
     @Test
+    void deleteUser() {
+        Date date = new Date();
+        User user = new User(1L, "name", "name@mail.ru", 123, date, date);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        service.removeUserById(1L);
+        verify(userRepository).findById(1L);
+    }
+
+    @Test
     void removeUserByNotExistingId() {
-        when(userRepository.findById(1L)).thenThrow(new NotFoundException("User not found"));
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
                 () -> service.removeUserById(1L));

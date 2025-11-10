@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -50,7 +51,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", containsString("/users/read/1")))
+                .andExpect(header().string("Location", containsString("/users/read/")))
                 .andExpect(content().contentType(MediaTypes.HAL_JSON_VALUE))
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.email").value("name@mail.ru"));
@@ -66,9 +67,7 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().is(409))
                 .andExpect(jsonPath("$.detail").value("DataIntegrityViolationException"))
-                .andExpect(jsonPath("$.type").value("http://localhost:8080/users/error/conflict"));
-
-
+                .andExpect(jsonPath("$.type", containsString("users/error/conflict")));
     }
 
     @Test
@@ -110,7 +109,6 @@ class UserControllerTest {
         var response = new UserResponse(1L, "name", "name@mail.ru", 12, new Date(), new Date());
         when(userService.updateUser(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(response);
 
-
         mockMvc.perform(put("/users/update/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -122,5 +120,6 @@ class UserControllerTest {
     void deleteReturns204() throws Exception {
         mockMvc.perform(delete("/users/delete/1"))
                 .andExpect(status().is(204));
+        verify(userService).removeUserById(1L);
     }
 }

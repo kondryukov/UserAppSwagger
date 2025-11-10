@@ -36,14 +36,6 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private Date updatedAt;
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public Long getId() {
         return id;
     }

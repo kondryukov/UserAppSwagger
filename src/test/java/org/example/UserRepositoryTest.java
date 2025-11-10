@@ -34,7 +34,7 @@ class UserRepositoryTest {
         user1.setName("name");
         user1.setEmail("name@mail.ru");
         user1.setAge(123);
-        userRepository.save(user1);
+        userRepository.saveAndFlush(user1);
 
 
         var user2 = new User();
@@ -43,6 +43,6 @@ class UserRepositoryTest {
         user2.setAge(123);
 
         Assertions.assertThrows(DataIntegrityViolationException.class,
-                () -> userRepository.save(user2));
+                () -> userRepository.saveAndFlush(user2));
     }
 }
