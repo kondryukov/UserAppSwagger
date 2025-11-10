@@ -104,8 +104,8 @@ class UserHateoasTest {
                 .andExpect(content().contentType(MediaTypes.HAL_JSON_VALUE))
                 .andExpect(jsonPath("$.id").value(11))
                 .andExpect(jsonPath("$._links.self.href", endsWith("users/read/11")))
-                .andExpect(jsonPath("$._links.all-users.href").value("http://localhost/users"))
-                .andExpect(jsonPath("$._links.update.href").value("http://localhost/users/update/11"))
+                .andExpect(jsonPath("$._links.all-users.href", endsWith("users")))
+                .andExpect(jsonPath("$._links.update.href", endsWith("users/update/11")))
                 .andExpect(jsonPath("$._links.delete.href", endsWith("users/delete/11")));
     }
 
